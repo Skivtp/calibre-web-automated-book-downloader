@@ -22,7 +22,7 @@ class InpxWebBackend:
         return results
 
     def _fetch_books(self, subsection_href):
-        """Заходим в подраздел и достаём книги"""
+        """Заходим в подраздел (title) и достаём список книг"""
         url = urljoin(self.base_url, subsection_href)
         r = requests.get(url)
         r.raise_for_status()
@@ -34,13 +34,27 @@ class InpxWebBackend:
             authors = entry.find("atom:content", self.ns)
             authors = authors.text if authors is not None else "Неизвестен"
 
-            # Здесь уже есть acquisition-ссылки
+            # Здесь ссылки ведут на /opds/book?uid=...
+            for link in entry.findall("atom:link", self.ns):
+                if "subsection" in link.attrib.get("rel", ""):
+                    books.extend(self._fetch_downloads(link.attrib["href"], title, authors))
+        return books
+
+    def _fetch_downloads(self, book_href, title, authors):
+        """Заходим в карточку книги и достаём acquisition-ссылки"""
+        url = urljoin(self.base_url, book_href)
+        r = requests.get(url)
+        r.raise_for_status()
+        root = ET.fromstring(r.text)
+
+        downloads = []
+        for entry in root.findall("atom:entry", self.ns):
             for link in entry.findall("atom:link", self.ns):
                 if "acquisition" in link.attrib.get("rel", ""):
-                    books.append({
+                    downloads.append({
                         "title": title,
                         "author": authors,
                         "format": link.attrib.get("type"),
                         "download": urljoin(self.base_url, link.attrib['href'])
                     })
-        return books
+        return downloads
