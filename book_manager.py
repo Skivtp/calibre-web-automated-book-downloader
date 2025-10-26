@@ -15,7 +15,7 @@ def search_books(query: str, filters: SearchFilters):
 
 
 def get_book_info(book_id: str) -> BookInfo:
-    # book_id у нас фактически = URL для скачивания
+    # book_id у нас фактически = download-ссылка
     return BookInfo(id=book_id, title="", author="", download_urls=[book_id])
 
 
