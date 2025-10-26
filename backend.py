@@ -34,7 +34,7 @@ def download_book(
 
 
 def queue_book(book_id: str, priority: int = 0) -> bool:
-    """Скачиваем книгу по её ID (URL)"""
+    """Скачиваем книгу по её download-ссылке"""
     book_info = get_book_info(book_id)
 
     if not book_info.download_urls:
