@@ -50,10 +50,15 @@ class InpxWebBackend:
         for entry in root.findall("atom:entry", self.ns):
             for link in entry.findall("atom:link", self.ns):
                 if "acquisition" in link.attrib.get("rel", ""):
+                    fmt = link.attrib.get("type")
+                    href = urljoin(self.base_url, link.attrib['href'])
                     downloads.append({
                         "title": title,
                         "author": authors,
-                        "format": link.attrib.get("type"),
-                        "download": urljoin(self.base_url, link.attrib['href'])
+                        "format": fmt,
+                        "download": href
                     })
+
+        # --- приоритет: сначала fb2, потом всё остальное ---
+        downloads.sort(key=lambda d: (0 if d["format"] == "application/fb2" else 1))
         return downloads
