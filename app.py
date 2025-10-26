@@ -180,19 +180,6 @@ if DEBUG:
 def api_search() -> Union[Response, Tuple[Response, int]]:
     """
     Search for books matching the provided query.
-
-    Query Parameters:
-        query (str): Search term (ISBN, title, author, etc.)
-        isbn (str): Book ISBN
-        author (str): Book Author
-        title (str): Book Title
-        lang (str): Book Language
-        sort (str): Order to sort results
-        content (str): Content type of book
-        format (str): File format filter (pdf, epub, mobi, azw3, fb2, djvu, cbz, cbr)
-
-    Returns:
-        flask.Response: JSON array of matching books or error response.
     """
     query = request.args.get('query', '')
 
@@ -211,7 +198,19 @@ def api_search() -> Union[Response, Tuple[Response, int]]:
 
     try:
         books = backend.search_books(query, filters)
-        return jsonify(books)
+
+        # --- исправление: нормализуем структуру ---
+        results = []
+        for book in books:
+            results.append({
+                "id": book.get("download"),       # теперь id = ссылка для скачивания
+                "title": book.get("title"),
+                "author": book.get("author"),
+                "format": book.get("format"),
+                "download": book.get("download")  # оставляем и download для явности
+            })
+
+        return jsonify(results)
     except Exception as e:
         logger.error_trace(f"Search error: {e}")
         return jsonify({"error": str(e)}), 500
