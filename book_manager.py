@@ -27,7 +27,6 @@ def download_book(book_info: BookInfo, book_path: Path, progress_callback=None, 
         if not data:
             raise Exception("No data received")
 
-        # --- исправление имени файла ---
         parsed = urlparse(url)
         filename = os.path.basename(parsed.path) or "book.fb2"
         book_path = Path("/cwa-book-ingest") / filename
