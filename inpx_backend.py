@@ -1,13 +1,14 @@
 import requests
 import xml.etree.ElementTree as ET
+from urllib.parse import urljoin
 
 class InpxWebBackend:
-    def __init__(self, base_url="http://192.168.31.216:12380/opds"):
+    def __init__(self, base_url="http://192.168.31.216:12380"):
         self.base_url = base_url
         self.ns = {"atom": "http://www.w3.org/2005/Atom"}
 
     def search(self, query):
-        url = f"{self.base_url}/search?type=title&term={query}"
+        url = f"{self.base_url}/opds/search?type=title&term={query}"
         r = requests.get(url)
         r.raise_for_status()
         root = ET.fromstring(r.text)
@@ -19,7 +20,7 @@ class InpxWebBackend:
         return results
 
     def _fetch_books(self, subsection_href):
-        url = f"{self.base_url}{subsection_href}"
+        url = urljoin(self.base_url, subsection_href)
         r = requests.get(url)
         r.raise_for_status()
         root = ET.fromstring(r.text)
@@ -34,7 +35,7 @@ class InpxWebBackend:
         return books
 
     def _fetch_downloads(self, book_href, title, authors):
-        url = f"{self.base_url}{book_href}"
+        url = urljoin(self.base_url, book_href)
         r = requests.get(url)
         r.raise_for_status()
         root = ET.fromstring(r.text)
@@ -47,6 +48,6 @@ class InpxWebBackend:
                         "title": title,
                         "author": authors,
                         "format": link.attrib.get("type"),
-                        "download": f"{self.base_url}{link.attrib['href']}"
+                        "download": urljoin(self.base_url, link.attrib['href'])
                     })
         return downloads
