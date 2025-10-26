@@ -1,30 +1,27 @@
+
 services:
   calibre-web-automated-book-downloader:
-    image: ghcr.io/calibrain/calibre-web-automated-book-downloader:latest
-    # Uncomment to build the image from the Dockerfile for local testing changes.
-    # Remember to comment out the image line above.
-    #build: .
+    # Вместо готового образа используем сборку из твоего форка
+    build: .
     container_name: calibre-web-automated-book-downloader
     environment:
       FLASK_PORT: 8084
       LOG_LEVEL: info
-      BOOK_LANGUAGE: en
+      BOOK_LANGUAGE: ru
       USE_BOOK_TITLE: true
-      TZ: America/New_York
+      TZ: Europe/Moscow
       APP_ENV: prod
       UID: 1000
       GID: 100
-      # CWA_DB_PATH: /auth/app.db  # Comment out to disable authentication
-      # Queue management settings
       MAX_CONCURRENT_DOWNLOADS: 3
       DOWNLOAD_PROGRESS_UPDATE_INTERVAL: 5
+      # Если вынесешь URL inpx-web в config.py:
+      # INPX_WEB_URL: http://192.168.31.216:12380/opds
     ports:
-      - 8084:8084
+      - "8084:8084"
     restart: unless-stopped
     volumes:
-      # This is where the books will be downloaded to, usually it would be
-      # the same as whatever you gave in "calibre-web-automated"
-      - /tmp/data/calibre-web/ingest:/cwa-book-ingest
-      # This is the location of CWA's app.db, which contains authentication
-      # details. Comment out to disable authentication
-      #- /cwa/config/path/app.db:/auth/app.db:ro
+      # Папка для загруженных книг
+      - /media/qbit/downloads/books:/cwa-book-ingest
+      # Если используешь авторизацию через Calibre-Web:
+      # - /cwa/config/path/app.db:/auth/app.db:ro
