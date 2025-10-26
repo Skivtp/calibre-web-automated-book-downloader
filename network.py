@@ -22,4 +22,5 @@ urllib.request.install_opener(opener)
 
 def init():
     """Пустая функция для совместимости с downloader.py"""
-    logger.info(
+    logger.info("Network initialized (inpx-web mode)")
+    pass
