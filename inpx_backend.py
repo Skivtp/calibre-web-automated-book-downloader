@@ -8,6 +8,7 @@ class InpxWebBackend:
         self.ns = {"atom": "http://www.w3.org/2005/Atom"}
 
     def search(self, query):
+        # 1. Поиск по названию
         url = f"{self.base_url}/opds/search?type=title&term={query}"
         r = requests.get(url)
         r.raise_for_status()
@@ -15,39 +16,22 @@ class InpxWebBackend:
 
         results = []
         for entry in root.findall("atom:entry", self.ns):
-            subsection = entry.find("atom:link", self.ns).attrib.get("href")
-            results.extend(self._fetch_books(subsection))
+            results.extend(self._parse_entry(entry))
         return results
 
-    def _fetch_books(self, subsection_href):
-        url = urljoin(self.base_url, subsection_href)
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
-
-        books = []
-        for entry in root.findall("atom:entry", self.ns):
-            title = entry.find("atom:title", self.ns).text
-            authors = entry.find("atom:content", self.ns)
-            authors = authors.text if authors is not None else "Неизвестен"
-            link = entry.find("atom:link", self.ns).attrib.get("href")
-            books.extend(self._fetch_downloads(link, title, authors))
-        return books
-
-    def _fetch_downloads(self, book_href, title, authors):
-        url = urljoin(self.base_url, book_href)
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
+    def _parse_entry(self, entry):
+        """Разбираем один <entry> и сразу достаём acquisition-ссылки"""
+        title = entry.find("atom:title", self.ns).text
+        authors = entry.find("atom:content", self.ns)
+        authors = authors.text if authors is not None else "Неизвестен"
 
         downloads = []
-        for entry in root.findall("atom:entry", self.ns):
-            for link in entry.findall("atom:link", self.ns):
-                if "acquisition" in link.attrib.get("rel", ""):
-                    downloads.append({
-                        "title": title,
-                        "author": authors,
-                        "format": link.attrib.get("type"),
-                        "download": urljoin(self.base_url, link.attrib['href'])
-                    })
+        for link in entry.findall("atom:link", self.ns):
+            if "acquisition" in link.attrib.get("rel", ""):
+                downloads.append({
+                    "title": title,
+                    "author": authors,
+                    "format": link.attrib.get("type"),
+                    "download": urljoin(self.base_url, link.attrib['href'])
+                })
         return downloads
