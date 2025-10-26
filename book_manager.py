@@ -1,70 +1,25 @@
-"""Book download manager handling search and retrieval operations via inpx-web."""
-
+import logging
 from pathlib import Path
-from typing import List, Optional, Callable
-from threading import Event
+from urllib.parse import urlparse
+import os
 
 import downloader
-from logger import setup_logger
-from models import BookInfo, SearchFilters
-from inpx_backend import InpxWebBackend
+import inpx_backend
+from models import SearchFilters, BookInfo
 
-logger = setup_logger(__name__)
+logger = logging.getLogger("book_manager")
 
 
-def search_books(query: str, filters: SearchFilters) -> List[BookInfo]:
-    backend = InpxWebBackend()
-    results = backend.search(query)
-
-    books: List[BookInfo] = []
-    for r in results:
-        books.append(
-            BookInfo(
-                id=r["download"],
-                preview=None,
-                title=r["title"],
-                author=r["author"],
-                publisher="",
-                year="",
-                language="ru",
-                format=r["format"] or "",
-                size="",
-                download_urls=[r["download"]],
-            )
-        )
-
-    if not books:
-        logger.info(f"No books found for query: {query}")
-        raise Exception("No books found. Please try another query.")
-
-    return books
+def search_books(query: str, filters: SearchFilters):
+    return inpx_backend.InpxWebBackend().search(query)
 
 
 def get_book_info(book_id: str) -> BookInfo:
-    return BookInfo(
-        id=book_id,
-        preview=None,
-        title="",
-        author="",
-        publisher="",
-        year="",
-        language="ru",
-        format="",
-        size="",
-        download_urls=[book_id],
-    )
+    # book_id у нас фактически = URL для скачивания
+    return BookInfo(id=book_id, title="", author="", download_urls=[book_id])
 
 
-def download_book(
-    book_info: BookInfo,
-    book_path: Path,
-    progress_callback: Optional[Callable[[float], None]] = None,
-    cancel_flag: Optional[Event] = None,
-) -> bool:
-    if not book_info.download_urls:
-        logger.error("No download URLs available")
-        return False
-
+def download_book(book_info: BookInfo, book_path: Path, progress_callback=None, cancel_flag=None) -> bool:
     url = book_info.download_urls[0]
     try:
         logger.info(f"Downloading `{book_info.title}` from `{url}`")
@@ -72,11 +27,16 @@ def download_book(
         if not data:
             raise Exception("No data received")
 
+        # --- исправление имени файла ---
+        parsed = urlparse(url)
+        filename = os.path.basename(parsed.path) or "book.fb2"
+        book_path = Path("/cwa-book-ingest") / filename
+
         with open(book_path, "wb") as f:
             f.write(data.getbuffer())
 
-        logger.info(f"Writing `{book_info.title}` successfully")
+        logger.info(f"Writing `{book_info.title}` successfully to {book_path}")
         return True
     except Exception as e:
-        logger.error_trace(f"Failed to download from {url}: {e}")
+        logger.error(f"Failed to download from {url}: {e}", exc_info=True)
         return False
