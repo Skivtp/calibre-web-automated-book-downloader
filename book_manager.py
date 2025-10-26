@@ -19,7 +19,8 @@ def get_book_info(book_id: str) -> BookInfo:
     return BookInfo(id=book_id, title="", author="", download_urls=[book_id])
 
 
-def download_book(book_info: BookInfo, book_path: Path, progress_callback=None, cancel_flag=None) -> bool:
+def download_book(book_info: BookInfo, book_path: Path,
+                  progress_callback=None, cancel_flag=None) -> bool:
     url = book_info.download_urls[0]
     try:
         logger.info(f"Downloading `{book_info.title}` from `{url}`")
@@ -27,8 +28,14 @@ def download_book(book_info: BookInfo, book_path: Path, progress_callback=None, 
         if not data:
             raise Exception("No data received")
 
+        # --- формируем имя файла ---
         parsed = urlparse(url)
-        filename = os.path.basename(parsed.path) or "book.fb2"
+        filename = os.path.basename(parsed.path) or "book"
+
+        # если нет расширения — добавляем .fb2
+        if not os.path.splitext(filename)[1]:
+            filename += ".fb2"
+
         book_path = Path("/cwa-book-ingest") / filename
 
         with open(book_path, "wb") as f:
