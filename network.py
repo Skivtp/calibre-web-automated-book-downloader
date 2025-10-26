@@ -1,14 +1,11 @@
-"""Network operations manager for the book downloader application.
-
-Упрощённая версия для работы только с inpx-web.
-"""
+"""Network operations manager for the book downloader application (simplified for inpx-web)."""
 
 import urllib.request
 from logger import setup_logger
 
 logger = setup_logger(__name__)
 
-# Настраиваем opener с User-Agent, чтобы сервер не блокировал запросы
+# Настраиваем opener с User-Agent
 opener = urllib.request.build_opener()
 opener.addheaders = [
     (
@@ -21,6 +18,6 @@ opener.addheaders = [
 urllib.request.install_opener(opener)
 
 def init():
-    """Пустая функция для совместимости с downloader.py"""
+    """Dummy init for compatibility."""
     logger.info("Network initialized (inpx-web mode)")
     pass
