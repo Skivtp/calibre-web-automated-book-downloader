@@ -1,56 +1,34 @@
-import requests
-import xml.etree.ElementTree as ET
-from urllib.parse import urljoin
+"""Backend facade for the downloader app (inpx-web only)."""
 
-class InpxWebBackend:
-    def __init__(self, base_url="http://192.168.31.216:12380/opds"):
-        self.base_url = base_url
-        self.ns = {"atom": "http://www.w3.org/2005/Atom"}
+from pathlib import Path
+from threading import Event
+from typing import List, Optional, Callable
 
-    def search(self, query):
-        # 1. Поиск по названию
-        url = f"{self.base_url}/search?type=title&term={query}"
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
+import book_manager
+from models import SearchFilters, BookInfo
 
-        results = []
-        for entry in root.findall("atom:entry", self.ns):
-            subsection = entry.find("atom:link", self.ns).attrib.get("href")
-            results.extend(self._fetch_books(subsection))
-        return results
 
-    def _fetch_books(self, subsection_href):
-        # 2. Загружаем подраздел (список книг)
-        url = urljoin(self.base_url, subsection_href)
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
+def queue_status():
+    """Return current queue status (stub implementation)."""
+    # Если в будущем захочешь реализовать очередь — можно расширить
+    return {"status": "ok", "queue_length": 0}
 
-        books = []
-        for entry in root.findall("atom:entry", self.ns):
-            title = entry.find("atom:title", self.ns).text
-            authors = entry.find("atom:content", self.ns)
-            authors = authors.text if authors is not None else "Неизвестен"
-            link = entry.find("atom:link", self.ns).attrib.get("href")
-            books.extend(self._fetch_downloads(link, title, authors))
-        return books
 
-    def _fetch_downloads(self, book_href, title, authors):
-        # 3. Загружаем карточку книги и достаём прямые ссылки
-        url = urljoin(self.base_url, book_href)
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
+def search_books(query: str, filters: SearchFilters) -> List[BookInfo]:
+    """Proxy to book_manager.search_books"""
+    return book_manager.search_books(query, filters)
 
-        downloads = []
-        for entry in root.findall("atom:entry", self.ns):
-            for link in entry.findall("atom:link", self.ns):
-                if "acquisition" in link.attrib.get("rel", ""):
-                    downloads.append({
-                        "title": title,
-                        "author": authors,
-                        "format": link.attrib.get("type"),
-                        "download": urljoin(self.base_url, link.attrib['href'])
-                    })
-        return downloads
+
+def get_book_info(book_id: str) -> BookInfo:
+    """Proxy to book_manager.get_book_info"""
+    return book_manager.get_book_info(book_id)
+
+
+def download_book(
+    book_info: BookInfo,
+    book_path: Path,
+    progress_callback: Optional[Callable[[float], None]] = None,
+    cancel_flag: Optional[Event] = None,
+) -> bool:
+    """Proxy to book_manager.download_book"""
+    return book_manager.download_book(book_info, book_path, progress_callback, cancel_flag)
