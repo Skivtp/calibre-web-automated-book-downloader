@@ -10,8 +10,12 @@ from models import SearchFilters, BookInfo
 
 def queue_status():
     """Return current queue status (stub implementation)."""
-    # Если в будущем захочешь реализовать очередь — можно расширить
     return {"status": "ok", "queue_length": 0}
+
+
+def get_active_downloads():
+    """Return list of active downloads (stub)."""
+    return []
 
 
 def search_books(query: str, filters: SearchFilters) -> List[BookInfo]:
@@ -31,4 +35,4 @@ def download_book(
     cancel_flag: Optional[Event] = None,
 ) -> bool:
     """Proxy to book_manager.download_book"""
-    return book_manager.download_book(book_info, book_path, progress_callback, cancel_flag)
+    return book_manager.download_book(book_info, book_path, progress_callback, 
