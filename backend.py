@@ -36,3 +36,14 @@ def download_book(
 ) -> bool:
     """Proxy to book_manager.download_book"""
     return book_manager.download_book(book_info, book_path, progress_callback, cancel_flag)
+
+
+def queue_book(book_id: str, priority: int = 0) -> bool:
+    """
+    Заглушка для очереди: сразу скачиваем книгу без постановки в очередь.
+    book_id — это URL для скачивания (мы его используем как id).
+    """
+    book_info = get_book_info(book_id)
+    # сохраняем в /cwa-book-ingest
+    book_path = Path("/cwa-book-ingest") / f"{book_id}.fb2"
+    return download_book(book_info, book_path)
