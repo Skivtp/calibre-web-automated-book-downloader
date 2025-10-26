@@ -34,8 +34,19 @@ def download_book(
 
 
 def queue_book(book_id: str, priority: int = 0) -> bool:
-    """Заглушка: сразу скачиваем книгу без очереди"""
+    """Скачиваем книгу по её ID (URL)"""
     book_info = get_book_info(book_id)
-    from pathlib import Path
-    book_path = Path("/cwa-book-ingest") / f"{book_id}.fb2"
+
+    if not book_info.download_urls:
+        print(f"Нет ссылок для скачивания у {book_id}")
+        return False
+
+    url = book_info.download_urls[0]
+
+    from urllib.parse import urlparse
+    import os
+    parsed = urlparse(url)
+    filename = os.path.basename(parsed.path) or f"{book_id}.fb2"
+
+    book_path = Path("/cwa-book-ingest") / filename
     return download_book(book_info, book_path)
