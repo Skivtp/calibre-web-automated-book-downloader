@@ -35,4 +35,4 @@ def download_book(
     cancel_flag: Optional[Event] = None,
 ) -> bool:
     """Proxy to book_manager.download_book"""
-    return book_manager.download_book(book_info, book_path, progress_callback, 
+    return book_manager.download_book(book_info, book_path, progress_callback, cancel_flag)
