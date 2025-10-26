@@ -43,10 +43,14 @@ class InpxWebBackend:
     def _fetch_downloads(self, book_href, title, authors):
         """Заходим в карточку книги и достаём acquisition-ссылки"""
         url = urljoin(self.base_url, book_href)
-        r = requests.get(url)
-        r.raise_for_status()
-        root = ET.fromstring(r.text)
+        try:
+            r = requests.get(url)
+            r.raise_for_status()
+        except requests.HTTPError as e:
+            print(f"Ошибка при загрузке {title}: {e}")
+            return []
 
+        root = ET.fromstring(r.text)
         downloads = []
         for entry in root.findall("atom:entry", self.ns):
             for link in entry.findall("atom:link", self.ns):
